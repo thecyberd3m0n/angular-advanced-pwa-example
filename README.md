@@ -171,3 +171,7 @@ Each hook is optional. Implement only what your feature needs:
 This boilerplate is **experimental and under active development**. Expect breaking changes to the
 worklet API, decorator options, file conventions, and build pipeline as the design settles. Feedback
 and experimentation are welcome.
+
+## Contributors
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md).

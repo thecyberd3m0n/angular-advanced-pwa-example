@@ -1,6 +1,18 @@
 {
   "name": "angular-advanced-pwa-example",
   "version": "0.0.0",
+  "author": "Dmitrij Rysanow <admin@dmitrijrysanow.pro> (https://dmitrijrysanow.pro)",
+  "contributors": [
+    {
+      "name": "Dmitrij Rysanow",
+      "email": "admin@dmitrijrysanow.pro",
+      "url": "https://dmitrijrysanow.pro"
+    },
+    {
+      "name": "Piotr Kasperski",
+      "email": "klonek6669@gmail.com"
+    }
+  ],
   "scripts": {
     "ng": "ng",
     "start": "concurrently --kill-others --names \"ng,sw\" --prefix-colors \"cyan,magenta\" \"ng serve\" \"npm run build:sw:watch\"",

@@ -6,6 +6,9 @@
 /out-tsc
 /bazel-out
 
+# Generated service worker (compiled from src/*.sw.ts by esbuild)
+/public/combined-sw.js
+
 # Node
 /node_modules
 npm-debug.log

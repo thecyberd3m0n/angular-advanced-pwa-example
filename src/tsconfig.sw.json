@@ -1,0 +1,16 @@
+/* TypeScript config for the custom service worker (src/*.sw.ts).
+ * The worker runs in an isolated ServiceWorkerGlobalScope, so it needs the
+ * `webworker` lib instead of the DOM libs used by the Angular app.
+ * esbuild uses this via `--tsconfig`; the editor uses it for IntelliSense.
+ */
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["webworker", "es2022"],
+    "types": [],
+    "module": "esnext",
+    "moduleResolution": "bundler"
+  },
+  "include": ["combined.sw.ts"]
+}

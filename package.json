@@ -3,10 +3,13 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "concurrently --kill-others --names \"ng,sw\" --prefix-colors \"cyan,magenta\" \"ng serve\" \"npm run build:sw:watch\"",
+    "build": "ng build && npm run build:sw:prod",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "build:sw": "esbuild src/combined.sw.ts --bundle --platform=browser --target=es2022 --tsconfig=src/tsconfig.sw.json --outfile=public/combined-sw.js",
+    "build:sw:watch": "npm run build:sw -- --watch",
+    "build:sw:prod": "esbuild src/combined.sw.ts --bundle --minify --platform=browser --target=es2022 --tsconfig=src/tsconfig.sw.json --outfile=dist/angular-advanced-pwa-example/browser/combined-sw.js"
   },
   "prettier": {
     "printWidth": 100,
@@ -37,6 +40,8 @@
     "@angular/build": "^21.0.3",
     "@angular/cli": "^21.0.3",
     "@angular/compiler-cli": "^21.0.0",
+    "concurrently": "^9.1.2",
+    "esbuild": "^0.25.0",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"

@@ -12,5 +12,5 @@
     "module": "esnext",
     "moduleResolution": "bundler"
   },
-  "include": ["combined.sw.ts"]
+  "include": ["combined.sw.ts", "sw/**/*.ts"]
 }

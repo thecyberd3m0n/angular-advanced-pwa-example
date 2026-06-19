@@ -1,90 +1,44 @@
 /// <reference lib="webworker" />
 
-// Custom service worker (TypeScript source — compiled to public/combined-sw.js
-// via esbuild; see the `build:sw*` npm scripts).
+// Service worker bootstrap entry — compiled to public/combined-sw.js via esbuild
+// (see the `build:sw*` npm scripts).
 //
-// Strategy from the Gemini guide (PWA.md): instead of registering Angular's
-// ngsw-worker.js directly, the app registers the COMPILED output of this file,
-// and we pull Angular's caching engine in via importScripts so it runs in the
-// same worker scope.
+// Pipeline:
+//   1. `import 'virtual:worklets'` pulls in every `*.sw.ts` worklet (resolved by
+//      esbuild.sw.mjs at build time) so each @ServiceWorklet() decorator runs
+//      and registers the class.
+//   2. `importScripts('./ngsw-worker.js')` loads Angular's caching engine FIRST
+//      (synchronously), so its install/activate/fetch listeners register before
+//      ours — preserving the existing update-on-reload behavior.
+//   3. `bootstrapWorklets()` instantiates each worklet and wires its methods to
+//      the service worker scope.
 //
-//   importScripts('./ngsw-worker.js')  ->  Angular handles all asset/data
-//                                           caching exactly as before, so the
-//                                           existing refresh behavior is
-//                                           unchanged.
-//
-// Anything below importScripts is our own custom, non-caching logic.
+// To add a feature: create a `*.sw.ts` file anywhere under src/ exporting a
+// class decorated with @ServiceWorklet(). No manual wiring required.
+
+import { bootstrapWorklets } from './sw/service-worklet';
+// Virtual module resolved by esbuild.sw.mjs at build time (see virtual-worklets.d.ts).
+// The editor's TS server can lag in picking up the ambient declaration, so silence
+// the stale "cannot find module" squiggle; tsc -p src/tsconfig.sw.json passes clean.
+// @ts-ignore
+import 'virtual:worklets';
 
 declare const self: ServiceWorkerGlobalScope;
 
-const LOG = '[combined-sw]';
-log('script evaluated');
+console.log('[combined-sw] script evaluated');
 
-// 1. Load the default Angular PWA caching mechanism FIRST. It runs
-//    synchronously, so Angular registers its install/activate/fetch listeners
-//    before ours. This preserves the current update-on-reload behavior.
-//
-//    Under `ng serve` (dev) Angular does NOT emit ngsw-worker.js, so the
-//    request hits the SPA fallback and returns HTML. Guard with try/catch so
-//    the worker still installs in dev (just without ngsw caching); in a real
-//    build the import succeeds and full caching/refresh behavior is preserved.
+// Load the default Angular PWA caching mechanism first. Under `ng serve` (dev)
+// Angular does NOT emit ngsw-worker.js, so guard with try/catch: the worker
+// still installs in dev (without ngsw caching); a real build keeps full caching.
 try {
   importScripts('./ngsw-worker.js');
-  log('ngsw-worker.js imported');
+  console.log('[combined-sw] ngsw-worker.js imported');
 } catch (error) {
-  log('ngsw-worker.js not available (dev mode?) — skipping ngsw', String(error));
-}
-
-// Lifecycle logging. These run alongside ngsw's own handlers (multiple
-// listeners for the same event all fire), so they don't change behavior.
-self.addEventListener('install', () => {
-  log('install event');
-});
-
-self.addEventListener('activate', () => {
-  log('activate event');
-});
-
-self.addEventListener('message', (event: ExtendableMessageEvent) => {
-  log('message event', event.data);
-});
-
-// 2. Custom feature: Web Push notifications.
-self.addEventListener('push', (event: PushEvent) => {
-  log('push event');
-  const data = event.data ? event.data.json() : {};
-
-  const title = data.title || 'New Message';
-  const options: NotificationOptions = {
-    body: data.body || 'You have a new update.',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
-    data: data.customPayload,
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-// Handle notification clicks: focus an existing window or open a new one.
-self.addEventListener('notificationclick', (event: NotificationEvent) => {
-  log('notificationclick event');
-  event.notification.close();
-
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clientList) => {
-      for (const client of clientList) {
-        if ('focus' in client) {
-          return client.focus();
-        }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow('/');
-      }
-      return undefined;
-    })
+  console.log(
+    '[combined-sw] ngsw-worker.js not available (dev mode?) — skipping ngsw',
+    String(error)
   );
-});
-
-function log(...args: unknown[]): void {
-  console.log(LOG, ...args);
 }
+
+// Wire up all registered worklets after ngsw has registered its own listeners.
+bootstrapWorklets();

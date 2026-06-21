@@ -367,4 +367,7 @@
   }
 </button>
 
+@if (isNewVersion$ | async) {
+  <button (click)="onUpdate()">Update</button>
+}
 <router-outlet />
